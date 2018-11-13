@@ -82,6 +82,17 @@ unsafe impl SpiDmaStream<SPI1, C3, DmaRx> for dma2::S2 {}
 unsafe impl SpiDmaStream<SPI1, C3, DmaTx> for dma2::S3 {}
 unsafe impl SpiDmaStream<SPI1, C3, DmaTx> for dma2::S5 {}
 
+/// Allows to write with DMA
+pub trait DmaWrite {
+    /// Start writing DMA transfer
+    fn dma_write<S, T, SPI, STREAM, CHANNEL, X>(&mut self, dma: STREAM, data: S) -> X
+    where
+        S: AsRef<[T]>,
+        STREAM: DmaStreamTransfer<S, T, X> + SpiDmaStream<SPI, CHANNEL, DmaTx>,
+        CHANNEL: DmaChannel,
+        X: Transfer<STREAM>;
+}
+
 /// SPI peripheral operating in full duplex master mode
 pub struct Spi<SPI, PINS> {
     spi: SPI,
@@ -176,9 +187,12 @@ macro_rules! hal {
                 pub fn free(self) -> ($SPIX, (SCK, MISO, MOSI)) {
                     (self.spi, self.pins)
                 }
+            }
 
+
+            impl<SCK, MISO, MOSI> DmaWrite for Spi<$SPIX, (SCK, MISO, MOSI)> {
                 /// Start a one-shot DMA transfer
-                pub fn dma_write<S, T, STREAM, CHANNEL, X>(&mut self, dma: STREAM, data: S) -> X
+                fn dma_write<S, T, $SPIX, STREAM, CHANNEL, X>(&mut self, dma: STREAM, data: S) -> X
                 where
                     S: AsRef<[T]>,
                     STREAM: DmaStreamTransfer<S, T, X> + SpiDmaStream<$SPIX, CHANNEL, DmaTx>,
@@ -186,7 +200,7 @@ macro_rules! hal {
                     X: Transfer<STREAM>,
                 {
                     self.spi.cr2.modify(|_, w| w.txdmaen().set_bit());
-                    
+
                     let dr: &mut T = unsafe {
                         &mut *(&self.spi.dr as *const _ as *mut T)
                     };
