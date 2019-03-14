@@ -2,7 +2,10 @@
 
 > HAL for the STM32F30x family of microcontrollers
 
+**Superseded by [`stm32f4xx-hal`]!**
+
 [`embedded-hal`]: https://crates.io/crates/embedded-hal
+[`stm32f4xx-hal`]: https://github.com/stm32-rs/stm32f4xx-hal
 
 ## [Documentation](https://docs.rs/stm32f30x-hal)
 
